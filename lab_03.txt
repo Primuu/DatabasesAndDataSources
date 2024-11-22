@@ -1,0 +1,334 @@
+-- 1)
+DECLARE
+        numer_max NUMBER;
+        nowa_nazwa departments.department_name%TYPE := 'EDUCATION';
+BEGIN
+        SELECT MAX(department_id)
+        INTO numer_max
+        FROM departments;
+        
+        INSERT INTO departments VALUES(numer_max + 10, nowa_nazwa, NULL, NULL);
+        
+        DBMS_OUTPUT.PUT_LINE('Max numer departamentu: ' || numer_max);
+END;
+
+-- 2)
+DECLARE
+        numer_max NUMBER;
+        nowa_nazwa departments.department_name%TYPE := 'EDUCATION';
+BEGIN
+        SELECT MAX(department_id)
+        INTO numer_max
+        FROM departments;
+        
+        INSERT INTO departments VALUES(numer_max + 10, nowa_nazwa, NULL, NULL);
+        
+        UPDATE departments
+        SET location_id = 3000
+        WHERE department_id = numer_max + 10;
+        
+        DBMS_OUTPUT.PUT_LINE('Max numer departamentu: ' || numer_max);
+        DBMS_OUTPUT.PUT_LINE('Nowy departament: ' || nowa_nazwa || ' z ID: ' || (numer_max + 10));
+        DBMS_OUTPUT.PUT_LINE('Zmieniono location_id na 3000 dla departamentu z ID: ' || (numer_max + 10));
+END;
+
+-- 3)
+BEGIN
+        EXECUTE IMMEDIATE 'CREATE TABLE nowa (
+            liczba VARCHAR2(10)
+        )';
+            
+        FOR i IN 1..10 LOOP
+            IF i != 4 AND i != 6 THEN
+                EXECUTE IMMEDIATE 'INSERT INTO nowa VALUES(:1)' USING TO_CHAR(i);
+            END IF;
+        END LOOP;
+        
+        DBMS_OUTPUT.PUT_LINE('Liczby  wstawione do tabeli NOWA.');
+END;
+
+-- 4)
+DECLARE
+        country_record COUNTRIES%ROWTYPE;
+BEGIN
+        SELECT *
+        INTO country_record
+        FROM COUNTRIES
+        WHERE country_id = 'CA';
+        
+        DBMS_OUTPUT.PUT_LINE('Country name: ' || country_record.country_name);
+        DBMS_OUTPUT.PUT_LINE('Region id: ' || country_record.region_id);
+END;
+
+-- 5)
+DECLARE
+        CURSOR salary_cursor IS
+            SELECT salary, last_name
+            FROM employees
+            WHERE department_id = 50;
+BEGIN
+        FOR emp_record IN salary_cursor LOOP
+            IF emp_record.salary > 3100 THEN
+                DBMS_OUTPUT.PUT_LINE(emp_record.last_name || ' nie dawać podwyżki');
+            ELSE
+                DBMS_OUTPUT.PUT_LINE(emp_record.last_name || ' dać podwyżkę');
+            END IF;
+        END LOOP;
+END;
+
+-- 6)
+DECLARE
+        CURSOR emp_cursor(min_salary NUMBER, max_salary NUMBER, name_part VARCHAR2) IS
+        SELECT salary, first_name, last_name
+        FROM employees
+        WHERE salary BETWEEN min_salary AND max_salary
+            AND LOWER(first_name) LIKE '%' || LOWER(name_part) || '%';       
+BEGIN
+        DBMS_OUTPUT.PUT_LINE('Pracownicy z zarobkami 1000-5000 z częścią imienia a/A');
+        FOR emp_record IN emp_cursor(1000, 5000, 'a') LOOP
+            DBMS_OUTPUT.PUT_LINE(
+                emp_record.first_name || ' ' || 
+                emp_record.last_name 
+                || ' - zarobki: ' || emp_record.salary);
+        END LOOP;
+        
+        DBMS_OUTPUT.PUT_LINE('Pracownicy z zarobkami 5000-20000 z częścią imienia u/U');
+        FOR emp_record IN emp_cursor(5000, 20000, 'u') LOOP
+            DBMS_OUTPUT.PUT_LINE(
+                emp_record.first_name || ' ' || 
+                emp_record.last_name 
+                || ' - zarobki: ' || emp_record.salary);
+        END LOOP;
+END;
+
+-- 9)
+-- a)
+CREATE OR REPLACE PROCEDURE add_job (
+    p_job_id    jobs.job_id%TYPE,
+    p_job_title jobs.job_title%TYPE
+) AS
+BEGIN
+        INSERT INTO jobs (job_id, job_title, min_salary, max_salary)
+        VALUES (p_job_id, p_job_title, NULL, NULL);
+        DBMS_OUTPUT.PUT_LINE('Job added.');
+EXCEPTION
+        WHEN DUP_VAL_ON_INDEX THEN
+            DBMS_OUTPUT.PUT_LINE('Error: job id already exists.');
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+
+BEGIN
+    add_job('DEV', 'Developer'); -- Job added.
+END;
+/
+
+BEGIN
+    add_job('DEV', 'Senior Developer'); -- Error: job id already exists.
+END;
+/
+
+BEGIN
+    add_job(NULL, 'Tester'); -- Error: ORA-01400: nie można wstawić wartości NULL do ("TRENTOWSKIA"."JOBS"."JOB_ID")
+END;
+/
+
+-- b)
+CREATE OR REPLACE PROCEDURE update_job_title (
+    p_job_id    jobs.job_id%TYPE,
+    p_new_title jobs.job_title%TYPE
+) AS
+        v_rows_updated NUMBER;
+BEGIN
+        UPDATE jobs
+        SET job_title = p_new_title
+        WHERE job_id = p_job_id;
+        
+        v_rows_updated := SQL%ROWCOUNT;
+        
+        IF v_rows_updated = 0 THEN
+            RAISE_APPLICATION_ERROR(-20001, 'No jobs updated.');
+        END IF;
+        
+        DBMS_OUTPUT.PUT_LINE('Job title updated.');
+EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+
+BEGIN
+    update_job_title('DEV', 'Senior Tester'); -- Job title updated.
+END;
+/
+
+BEGIN
+    update_job_title('UNKNOWN', 'Senior Tester ++'); -- Error: ORA-20001: No jobs updated.
+END;
+/
+
+-- c)
+CREATE OR REPLACE PROCEDURE delete_job (
+    p_job_id jobs.job_id%TYPE
+) AS
+    v_rows_deleted NUMBER;
+BEGIN
+        DELETE
+        FROM jobs
+        WHERE job_id = p_job_id;
+        
+        v_rows_deleted := SQL%ROWCOUNT;
+        
+        IF v_rows_deleted = 0 THEN
+            RAISE_APPLICATION_ERROR(-20002, 'No jobs deleted');
+        END IF;
+        
+        DBMS_OUTPUT.PUT_LINE('Job deleted.');
+EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+
+BEGIN
+    delete_job('DEV'); -- Job deleted.
+END;
+/
+
+BEGIN
+    delete_job('DEV'); -- Error: ORA-20002: No jobs deleted
+END;
+/
+
+-- d)
+CREATE OR REPLACE PROCEDURE get_employee_info (
+    p_emp_id    employees.employee_id%TYPE,
+    p_salary    OUT employees.salary%TYPE,
+    p_last_name OUT employees.last_name%TYPE
+) AS
+BEGIN
+        SELECT salary, last_name
+        INTO p_salary, p_last_name
+        FROM employees
+        WHERE employee_id = p_emp_id;
+        
+        DBMS_OUTPUT.PUT_LINE(
+            'Employee found: ' || p_last_name ||
+            ' salary: ' || p_salary);
+EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(-20003, 'No employee found.');
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+
+
+DECLARE
+    v_salary    employees.salary%TYPE;
+    v_last_name employees.last_name%TYPE;
+BEGIN
+    get_employee_info(101, v_salary, v_last_name); -- Employee found: Kochhar salary: 17000
+
+        DBMS_OUTPUT.PUT_LINE(
+            'Employee found: ' || v_last_name ||
+            ' salary: ' || v_salary);
+END;
+/
+
+DECLARE
+    v_salary    employees.salary%TYPE;
+    v_last_name employees.last_name%TYPE;
+BEGIN
+    get_employee_info(100000, v_salary, v_last_name); 
+-- Error report -
+-- ORA-20003: No employee found.
+-- ORA-06512: przy "TRENTOWSKIA.GET_EMPLOYEE_INFO", linia 17
+-- ORA-06512: przy linia 5
+
+        DBMS_OUTPUT.PUT_LINE(
+            'Employee found: ' || v_last_name ||
+            ' salary: ' || v_salary);
+END;
+/
+
+-- e)
+CREATE SEQUENCE employees_seq
+START WITH 1
+INCREMENT BY 1 
+NOCACHE;
+/
+
+CREATE OR REPLACE PROCEDURE add_employee (
+    p_first_name        employees.first_name%TYPE DEFAULT 'Jan',
+    p_last_name         employees.last_name%TYPE DEFAULT 'Kowalski',
+    p_email             employees.email%TYPE,
+    p_phone_number      employees.phone_number%TYPE,
+    p_hire_date         employees.hire_date%TYPE DEFAULT SYSDATE,
+    p_job_id            employees.job_id%TYPE,
+    p_salary            employees.salary%TYPE DEFAULT 3000,
+    p_commission_pct    employees.commission_pct%TYPE DEFAULT NULL,
+    p_manager_id        employees.manager_id%TYPE DEFAULT NULL,
+    p_department_id     employees.department_id%TYPE DEFAULT 50
+) AS
+    v_emp_id employees.employee_id%TYPE;
+BEGIN
+        SELECT employees_seq.NEXTVAL INTO v_emp_id FROM DUAL;
+        
+        INSERT INTO employees (
+            employee_id, first_name, last_name, email, phone_number, hire_date,
+            job_id, salary, commission_pct, manager_id, department_id) 
+        VALUES (v_emp_id, p_first_name, p_last_name, p_email,
+            p_phone_number, p_hire_date, p_job_id, p_salary, p_commission_pct, 
+            p_manager_id, p_department_id
+        );
+        
+        DBMS_OUTPUT.PUT_LINE('Employee added.');
+EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+
+BEGIN
+    add_employee(
+        p_email => 'jan.kowalski@example.com',
+        p_phone_number => '515.123.1234', 
+        p_job_id => 'AD_VP');
+END;
+/
+-- Employee added.
+
+BEGIN
+    add_employee(
+        'Anna',
+        'Nowak',
+        'anna.nowak@example.com',
+        '515.456.1789',
+        TO_DATE('2024-01-01', 'YYYY-MM-DD'),
+        'AD_VP',
+        5000,
+        NULL,
+        100,
+        50
+    );
+END;
+/
+-- Employee added.
+
+BEGIN
+    add_employee(
+        p_email => 'invalid.salary@example.com',
+        p_phone_number => '515.143.1234', 
+        p_job_id => 'AD_VP',
+        p_salary => 300000
+    );
+END;
+/
+-- Error: ORA-12899: wartość zbyt duża dla kolumny "TRENTOWSKIA"."EMPLOYEES"."EMAIL" (obecna: 26, maksymalna: 25)

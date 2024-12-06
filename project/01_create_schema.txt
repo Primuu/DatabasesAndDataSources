@@ -1,0 +1,84 @@
+CREATE TABLE addresses (
+    address_id NUMBER PRIMARY KEY,
+    locality VARCHAR2(255) NOT NULL,
+    street VARCHAR2(255),
+    zip_code VARCHAR2(10) NOT NULL,
+    property_number VARCHAR2(10) NOT NULL,
+    apartment_number VARCHAR2(10)
+);
+
+CREATE TABLE agents (
+    agent_id NUMBER PRIMARY KEY,
+    first_name VARCHAR2(255) NOT NULL,
+    last_name VARCHAR2(255) NOT NULL,
+    phone_num VARCHAR2(15) NOT NULL,
+    email VARCHAR2(255) NOT NULL,
+    commission_rate NUMBER(5, 2)
+);
+
+CREATE TABLE clients (
+    client_id NUMBER PRIMARY KEY,
+    first_name VARCHAR2(255) NOT NULL,
+    last_name VARCHAR2(255) NOT NULL,
+    phone_number VARCHAR2(15) NOT NULL,
+    email VARCHAR2(255) NOT NULL,
+    budget NUMBER
+);
+
+CREATE TABLE estate_statuses (
+    status_id NUMBER PRIMARY KEY,
+    status_name VARCHAR2(45) NOT NULL
+);
+
+CREATE TABLE estate_types (
+    type_id NUMBER PRIMARY KEY,
+    type_name VARCHAR2(45) NOT NULL
+);
+
+CREATE TABLE estate_features (
+    feature_id NUMBER PRIMARY KEY,
+    estate_description CLOB,
+    num_of_rooms NUMBER,
+    num_of_bedrooms NUMBER,
+    num_of_bathrooms NUMBER,
+    floor_number NUMBER,
+    num_of_parking_spaces NUMBER
+);
+
+CREATE TABLE estates (
+    estate_id NUMBER PRIMARY KEY,
+    feature_id NUMBER,
+    address_id NUMBER,
+    agent_id NUMBER,
+    status_id NUMBER,
+    type_id NUMBER,
+    estate_name VARCHAR2(255),
+    area NUMBER NOT NULL,
+    price NUMBER NOT NULL,
+    FOREIGN KEY (feature_id) REFERENCES estate_features(feature_id),
+    FOREIGN KEY (address_id) REFERENCES addresses(address_id),
+    FOREIGN KEY (agent_id) REFERENCES agents(agent_id),
+    FOREIGN KEY (status_id) REFERENCES estate_statuses(status_id),
+    FOREIGN KEY (type_id) REFERENCES estate_types(type_id)
+);
+
+CREATE TABLE transactions (
+    transaction_id NUMBER PRIMARY KEY,
+    estate_id NUMBER,
+    client_id NUMBER,
+    agent_id NUMBER,
+    transaction_date DATE,
+    sale_price NUMBER,
+    FOREIGN KEY (estate_id) REFERENCES estates(estate_id),
+    FOREIGN KEY (client_id) REFERENCES clients(client_id),
+    FOREIGN KEY (agent_id) REFERENCES agents(agent_id)
+);
+
+CREATE TABLE transaction_logs (
+    log_id NUMBER PRIMARY KEY,
+    transaction_id NUMBER,
+    log_content CLOB,
+    log_date DATE,
+    modified_by VARCHAR2(255),
+    FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id)
+);

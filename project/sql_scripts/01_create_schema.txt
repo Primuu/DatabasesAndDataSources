@@ -11,7 +11,7 @@ CREATE TABLE agents (
     agent_id NUMBER PRIMARY KEY,
     first_name VARCHAR2(255) NOT NULL,
     last_name VARCHAR2(255) NOT NULL,
-    phone_num VARCHAR2(15) NOT NULL,
+    phone_number VARCHAR2(15) NOT NULL,
     email VARCHAR2(255) NOT NULL,
     commission_rate NUMBER(5, 2)
 );
@@ -82,3 +82,24 @@ CREATE TABLE transaction_logs (
     modified_by VARCHAR2(255),
     FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id)
 );
+
+
+--DROP TABLE transaction_logs CASCADE CONSTRAINTS;
+--DROP TABLE transactions CASCADE CONSTRAINTS;
+--DROP TABLE estates CASCADE CONSTRAINTS;
+--DROP TABLE estate_features CASCADE CONSTRAINTS;
+--DROP TABLE estate_types CASCADE CONSTRAINTS;
+--DROP TABLE estate_statuses CASCADE CONSTRAINTS;
+--DROP TABLE addresses CASCADE CONSTRAINTS;
+--DROP TABLE agents CASCADE CONSTRAINTS;
+--DROP TABLE clients CASCADE CONSTRAINTS;
+
+--DELETE FROM transaction_logs;
+--DELETE FROM transactions;
+--DELETE FROM estates;
+--DELETE FROM estate_features;
+--DELETE FROM addresses;
+--DELETE FROM clients;
+--DELETE FROM agents;
+--DELETE FROM estate_statuses;
+--DELETE FROM estate_types;

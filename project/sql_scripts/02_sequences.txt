@@ -6,7 +6,6 @@ CREATE SEQUENCE estate_types_seq START WITH 1000 INCREMENT BY 1;
 CREATE SEQUENCE estate_features_seq START WITH 1000 INCREMENT BY 1;
 CREATE SEQUENCE estates_seq START WITH 1000 INCREMENT BY 1;
 CREATE SEQUENCE transactions_seq START WITH 1000 INCREMENT BY 1;
-CREATE SEQUENCE transaction_logs_seq START WITH 1000 INCREMENT BY 1;
 
 CREATE OR REPLACE TRIGGER trg_addresses_id
 BEFORE INSERT ON addresses
@@ -72,14 +71,6 @@ BEGIN
 END;
 /
 
-CREATE OR REPLACE TRIGGER trg_transaction_logs_id
-BEFORE INSERT ON transaction_logs
-FOR EACH ROW
-BEGIN
-    :NEW.log_id := transaction_logs_seq.NEXTVAL;
-END;
-/
-
 --DROP TRIGGER trg_addresses_id;
 --DROP TRIGGER trg_agents_id;
 --DROP TRIGGER trg_clients_id;
@@ -88,7 +79,6 @@ END;
 --DROP TRIGGER trg_estate_features_id;
 --DROP TRIGGER trg_estates_id;
 --DROP TRIGGER trg_transactions_id;
---DROP TRIGGER trg_transaction_logs_id;
 
 --DROP SEQUENCE addresses_seq;
 --DROP SEQUENCE agents_seq;
@@ -98,4 +88,3 @@ END;
 --DROP SEQUENCE estate_features_seq;
 --DROP SEQUENCE estates_seq;
 --DROP SEQUENCE transactions_seq;
---DROP SEQUENCE transaction_logs_seq;

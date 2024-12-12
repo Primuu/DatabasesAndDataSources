@@ -1,0 +1,909 @@
+1. Procedury, funkcje, wyzwalacze obsługujące bazę (Obsługa wyjątków, również własne wyjątki):
+	- Sprawdzanie poprawności dodawanych danych (np. funkcja sprawdzająca poprawność emaila, zip-code, numeru telefonu, czy liczba jest >= 0)
+	
+
+
+CREATE OR REPLACE FUNCTION validate_email(p_email IN VARCHAR2) RETURN NUMBER IS
+    BEGIN
+        IF REGEXP_LIKE(p_email, '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$') THEN
+            RETURN 1;
+        ELSE
+            RETURN 0;
+        END IF;
+    END;
+/
+
+SELECT validate_email('example@email.com') FROM dual;
+SELECT validate_email('invalid-email') FROM dual;
+
+
+
+CREATE OR REPLACE FUNCTION validate_zip_code(p_zip_code IN VARCHAR2) RETURN NUMBER IS
+BEGIN
+    IF REGEXP_LIKE(p_zip_code, '^\d{2}-\d{3}$') THEN
+        RETURN 1;
+    ELSE
+        RETURN 0;
+    END IF;
+END;
+/
+
+SELECT validate_zip_code('12-345') FROM dual;
+SELECT validate_zip_code('12-34a') FROM dual;
+
+
+
+CREATE OR REPLACE FUNCTION validate_phone_number(p_phone_number IN VARCHAR2) RETURN NUMBER IS
+BEGIN
+    IF REGEXP_LIKE(p_phone_number, '^\+?\d{2}-\d{3}-\d{3}-\d{3}$') THEN
+        RETURN 1;
+    ELSE
+        RETURN 0;
+    END IF;
+END;
+/
+
+SELECT validate_phone_number('+12-123-123-123') FROM dual;
+SELECT validate_phone_number('+12-123-123-1234') FROM dual;
+
+
+
+CREATE OR REPLACE FUNCTION validate_non_negative(p_value IN NUMBER) RETURN NUMBER IS
+BEGIN
+    IF p_value > 0 THEN
+        RETURN 1;
+    ELSE
+        RETURN 0;
+    END IF;
+END;
+/
+
+SELECT validate_non_negative(10) FROM dual;
+SELECT validate_non_negative(-5) FROM dual;
+
+
+
+********************************************	- Dodawanie rekordów	********************************************
+
+
+
+CREATE OR REPLACE PACKAGE add_records_pkg AS
+    PROCEDURE add_agent(
+        p_first_name IN VARCHAR2,
+        p_last_name IN VARCHAR2,
+        p_phone_number IN VARCHAR2,
+        p_email IN VARCHAR2,
+        p_commission_rate IN NUMBER
+    );
+
+    PROCEDURE add_address(
+        p_locality IN VARCHAR2,
+        p_street IN VARCHAR2,
+        p_zip_code IN VARCHAR2,
+        p_property_number IN VARCHAR2,
+        p_apartment_number IN VARCHAR2
+    );
+
+    PROCEDURE add_client(
+        p_first_name IN VARCHAR2,
+        p_last_name IN VARCHAR2,
+        p_phone_number IN VARCHAR2,
+        p_email IN VARCHAR2,
+        p_budget IN NUMBER
+    );
+
+    PROCEDURE add_estate(
+        p_feature_id IN NUMBER,
+        p_address_id IN NUMBER,
+        p_agent_id IN NUMBER,
+        p_status_id IN NUMBER,
+        p_type_id IN NUMBER,
+        p_estate_name IN VARCHAR2,
+        p_area IN NUMBER,
+        p_price IN NUMBER
+    );
+END add_records_pkg;
+/
+
+CREATE OR REPLACE PACKAGE BODY add_records_pkg AS
+    PROCEDURE add_agent(
+        p_first_name IN VARCHAR2,
+        p_last_name IN VARCHAR2,
+        p_phone_number IN VARCHAR2,
+        p_email IN VARCHAR2,
+        p_commission_rate IN NUMBER
+    ) IS
+    BEGIN
+        IF validate_email(p_email) = 0 THEN
+            RAISE_APPLICATION_ERROR(-20100, 'Invalid email.');
+        END IF;
+
+        IF validate_phone_number(p_phone_number) = 0 THEN
+            RAISE_APPLICATION_ERROR(-20101, 'Invalid phone number.');
+        END IF;
+
+        IF validate_non_negative(p_commission_rate) = 0 THEN
+            RAISE_APPLICATION_ERROR(-20102, 'Invalid commission rate.');
+        END IF;
+
+        INSERT INTO agents (first_name, last_name, phone_number, email, commission_rate)
+        VALUES (p_first_name, p_last_name, p_phone_number, p_email, p_commission_rate);
+
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('Agent added.');
+    END add_agent;
+
+    PROCEDURE add_address(
+        p_locality IN VARCHAR2,
+        p_street IN VARCHAR2,
+        p_zip_code IN VARCHAR2,
+        p_property_number IN VARCHAR2,
+        p_apartment_number IN VARCHAR2
+    ) IS
+    BEGIN
+        IF validate_zip_code(p_zip_code) = 0 THEN
+            RAISE_APPLICATION_ERROR(-20103, 'Invalid zip-code.');
+        END IF;
+
+        INSERT INTO addresses (locality, street, zip_code, property_number, apartment_number)
+        VALUES (p_locality, p_street, p_zip_code, p_property_number, p_apartment_number);
+
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('Address added.');
+    END add_address;
+
+    PROCEDURE add_client(
+        p_first_name IN VARCHAR2,
+        p_last_name IN VARCHAR2,
+        p_phone_number IN VARCHAR2,
+        p_email IN VARCHAR2,
+        p_budget IN NUMBER
+    ) IS
+    BEGIN
+        IF validate_email(p_email) = 0 THEN
+            RAISE_APPLICATION_ERROR(-20100, 'Invalid email.');
+        END IF;
+
+        IF validate_phone_number(p_phone_number) = 0 THEN
+            RAISE_APPLICATION_ERROR(-20101, 'Invalid phone number.');
+        END IF;
+        
+        IF validate_non_negative(p_budget) = 0 THEN
+            RAISE_APPLICATION_ERROR(-20104, 'Invalid budget.');
+        END IF;
+
+        INSERT INTO clients (first_name, last_name, phone_number, email, budget)
+        VALUES (p_first_name, p_last_name, p_phone_number, p_email, p_budget);
+
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('Client added.');
+    END add_client;
+
+    PROCEDURE add_estate(
+        p_feature_id IN NUMBER,
+        p_address_id IN NUMBER,
+        p_agent_id IN NUMBER,
+        p_status_id IN NUMBER,
+        p_type_id IN NUMBER,
+        p_estate_name IN VARCHAR2,
+        p_area IN NUMBER,
+        p_price IN NUMBER
+    ) IS
+    BEGIN
+        IF validate_non_negative(p_area) = 0 THEN
+            RAISE_APPLICATION_ERROR(-20105, 'Invalid area.');
+        END IF;
+    
+        IF validate_non_negative(p_price) = 0 THEN
+            RAISE_APPLICATION_ERROR(-20106, 'Invalid price.');
+        END IF;
+
+        INSERT INTO estates (
+            feature_id, address_id, agent_id, status_id, type_id, estate_name, area, price
+        ) VALUES (
+            p_feature_id, p_address_id, p_agent_id, p_status_id, p_type_id, p_estate_name, p_area, p_price
+        );
+
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('Estate added.');
+    END add_estate;
+
+END add_records_pkg;
+/
+
+ALTER SESSION SET NLS_NUMERIC_CHARACTERS = '.,';
+
+
+BEGIN
+    add_records_pkg.add_agent(
+        p_first_name => 'Adam',
+        p_last_name => 'Kowalski',
+        p_phone_number => '+48-123-456-789',
+        p_email => 'adam.kow@email.com',
+        p_commission_rate => 5.5
+    );
+END;
+/
+
+BEGIN
+    add_records_pkg.add_address(
+        p_locality => 'Warszawa',
+        p_street => 'Kwiatowa',
+        p_zip_code => '00-123',
+        p_property_number => '10A',
+        p_apartment_number => '5'
+    );
+END;
+/
+
+BEGIN
+    add_records_pkg.add_client(
+        p_first_name => 'Jacob',
+        p_last_name => 'Smith',
+        p_phone_number => '+48-987-654-321',
+        p_email => 'jacob.smith@email.com',
+        p_budget => 250000
+    );
+END;
+/
+
+BEGIN
+    add_records_pkg.add_estate(
+        p_feature_id => 1001,
+        p_address_id => 1001,
+        p_agent_id => 1001,
+        p_status_id => 1000,
+        p_type_id => 1001,
+        p_estate_name => 'Beautiful House',
+        p_area => 120,
+        p_price => 450000
+    );
+END;
+/
+
+
+
+********************************************	- Usuwanie rekordów	********************************************
+
+
+
+CREATE OR REPLACE PACKAGE delete_records_pkg AS
+    PROCEDURE delete_agent(p_agent_id IN NUMBER);
+    PROCEDURE delete_client(p_client_id IN NUMBER);
+    PROCEDURE delete_address(p_address_id IN NUMBER);
+    PROCEDURE delete_estate(p_estate_id IN NUMBER);
+END delete_records_pkg;
+/
+
+CREATE OR REPLACE PACKAGE BODY delete_records_pkg AS
+    PROCEDURE delete_agent(p_agent_id IN NUMBER) IS
+    BEGIN
+        DELETE FROM agents
+        WHERE agent_id = p_agent_id;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20404, 'Record not found.');
+        END IF;
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE_APPLICATION_ERROR(-20300, 'Error:' || SQLERRM);
+    END delete_agent;
+
+    PROCEDURE delete_client(p_client_id IN NUMBER) IS
+    BEGIN
+        DELETE FROM clients
+        WHERE client_id = p_client_id;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20404, 'Record not found.');
+        END IF;
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE_APPLICATION_ERROR(-20300, 'Error:' || SQLERRM);
+    END delete_client;
+
+    PROCEDURE delete_address(p_address_id IN NUMBER) IS
+    BEGIN
+        DELETE FROM addresses
+        WHERE address_id = p_address_id;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20404, 'Record not found.');
+        END IF;
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE_APPLICATION_ERROR(-20300, 'Error:' || SQLERRM);
+    END delete_address;
+
+    PROCEDURE delete_estate(p_estate_id IN NUMBER) IS
+    BEGIN
+        DELETE FROM estates
+        WHERE estate_id = p_estate_id;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20404, 'Record not found.');
+        END IF;
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE_APPLICATION_ERROR(-20300, 'Error:' || SQLERRM);
+    END delete_estate;
+
+END delete_records_pkg;
+/
+
+BEGIN
+    delete_records_pkg.delete_agent(p_agent_id => 1025);
+END;
+/
+
+BEGIN
+    delete_records_pkg.delete_client(p_client_id => 1300);
+END;
+/
+
+BEGIN
+    delete_records_pkg.delete_address(p_address_id => 2992);
+END;
+/
+
+BEGIN
+    delete_records_pkg.delete_estate(p_estate_id => 1996);
+END;
+/
+
+
+
+********************************************	- Aktualizacja rekordów	********************************************
+
+
+
+CREATE OR REPLACE PACKAGE update_records_pkg AS
+    PROCEDURE update_agent(
+        p_agent_id IN NUMBER,
+        p_first_name IN VARCHAR2,
+        p_last_name IN VARCHAR2,
+        p_phone_number IN VARCHAR2,
+        p_email IN VARCHAR2,
+        p_commission_rate IN NUMBER
+    );
+
+    PROCEDURE update_client(
+        p_client_id IN NUMBER,
+        p_first_name IN VARCHAR2,
+        p_last_name IN VARCHAR2,
+        p_phone_number IN VARCHAR2,
+        p_email IN VARCHAR2,
+        p_budget IN NUMBER
+    );
+
+    PROCEDURE update_address(
+        p_address_id IN NUMBER,
+        p_locality IN VARCHAR2,
+        p_street IN VARCHAR2,
+        p_zip_code IN VARCHAR2,
+        p_property_number IN VARCHAR2,
+        p_apartment_number IN VARCHAR2
+    );
+
+    PROCEDURE update_estate(
+        p_estate_id IN NUMBER,
+        p_feature_id IN NUMBER,
+        p_address_id IN NUMBER,
+        p_agent_id IN NUMBER,
+        p_status_id IN NUMBER,
+        p_type_id IN NUMBER,
+        p_estate_name IN VARCHAR2,
+        p_area IN NUMBER,
+        p_price IN NUMBER
+    );
+END update_records_pkg;
+/
+
+CREATE OR REPLACE PACKAGE BODY update_records_pkg AS
+    PROCEDURE update_agent(
+        p_agent_id IN NUMBER,
+        p_first_name IN VARCHAR2,
+        p_last_name IN VARCHAR2,
+        p_phone_number IN VARCHAR2,
+        p_email IN VARCHAR2,
+        p_commission_rate IN NUMBER
+    ) IS
+    BEGIN
+        UPDATE agents
+        SET first_name = p_first_name,
+            last_name = p_last_name,
+            phone_number = p_phone_number,
+            email = p_email,
+            commission_rate = p_commission_rate
+        WHERE agent_id = p_agent_id;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20404, 'Record not found.');
+        END IF;
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE_APPLICATION_ERROR(-20300, 'Error:' || SQLERRM);
+    END update_agent;
+
+    PROCEDURE update_client(
+        p_client_id IN NUMBER,
+        p_first_name IN VARCHAR2,
+        p_last_name IN VARCHAR2,
+        p_phone_number IN VARCHAR2,
+        p_email IN VARCHAR2,
+        p_budget IN NUMBER
+    ) IS
+    BEGIN
+        UPDATE clients
+        SET first_name = p_first_name,
+            last_name = p_last_name,
+            phone_number = p_phone_number,
+            email = p_email,
+            budget = p_budget
+        WHERE client_id = p_client_id;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20404, 'Record not found.');
+        END IF;
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE_APPLICATION_ERROR(-20300, 'Error:' || SQLERRM);
+    END update_client;
+
+    PROCEDURE update_address(
+        p_address_id IN NUMBER,
+        p_locality IN VARCHAR2,
+        p_street IN VARCHAR2,
+        p_zip_code IN VARCHAR2,
+        p_property_number IN VARCHAR2,
+        p_apartment_number IN VARCHAR2
+    ) IS
+    BEGIN
+        UPDATE addresses
+        SET locality = p_locality,
+            street = p_street,
+            zip_code = p_zip_code,
+            property_number = p_property_number,
+            apartment_number = p_apartment_number
+        WHERE address_id = p_address_id;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20404, 'Record not found.');
+        END IF;
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE_APPLICATION_ERROR(-20300, 'Error:' || SQLERRM);
+    END update_address;
+
+    PROCEDURE update_estate(
+        p_estate_id IN NUMBER,
+        p_feature_id IN NUMBER,
+        p_address_id IN NUMBER,
+        p_agent_id IN NUMBER,
+        p_status_id IN NUMBER,
+        p_type_id IN NUMBER,
+        p_estate_name IN VARCHAR2,
+        p_area IN NUMBER,
+        p_price IN NUMBER
+    ) IS
+    BEGIN
+        UPDATE estates
+        SET feature_id = p_feature_id,
+            address_id = p_address_id,
+            agent_id = p_agent_id,
+            status_id = p_status_id,
+            type_id = p_type_id,
+            estate_name = p_estate_name,
+            area = p_area,
+            price = p_price
+        WHERE estate_id = p_estate_id;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20404, 'Record not found.');
+        END IF;
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE_APPLICATION_ERROR(-20300, 'Error:' || SQLERRM);
+    END update_estate;
+
+END update_records_pkg;
+/
+
+BEGIN
+    update_records_pkg.update_agent(
+        p_agent_id => 1000,
+        p_first_name => 'Maximus',
+        p_last_name => 'Gladiatorus',
+        p_phone_number => '+48-123-456-789',
+        p_email => 'max.gla@example.com',
+        p_commission_rate => 10
+    );
+END;
+/
+
+BEGIN
+    update_records_pkg.update_client(
+        p_client_id => 1001,
+        p_first_name => 'Anna',
+        p_last_name => 'Smith',
+        p_phone_number => '+48-987-654-321',
+        p_email => 'anna.smith@example.com',
+        p_budget => 2000000
+    );
+END;
+/
+
+BEGIN
+    update_records_pkg.update_address(
+        p_address_id => 1010,
+        p_locality => 'Warsaw',
+        p_street => 'Golden Strasse',
+        p_zip_code => '00-123',
+        p_property_number => '10',
+        p_apartment_number => '5'
+    );
+END;
+/
+
+BEGIN
+    update_records_pkg.update_estate(
+        p_estate_id => 1000,
+        p_feature_id => 1000,
+        p_address_id => 1000,
+        p_agent_id => 1000,
+        p_status_id => 1000,
+        p_type_id => 1002,
+        p_estate_name => 'Luxurious Villa',
+        p_area => 250,
+        p_price => 1200000
+    );
+END;
+/
+
+
+
+********************************************	- Archiwizacja usuniętych danych i logowanie ********************************************
+
+
+
+CREATE SEQUENCE transaction_logs_seq START WITH 1000 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER trg_log_transactions_insert
+AFTER INSERT ON transactions
+FOR EACH ROW
+DECLARE
+    v_user VARCHAR2(255);
+    v_log_content CLOB;
+BEGIN
+    v_user := NVL(SYS_CONTEXT('USERENV', 'SESSION_USER'), 'Unknown');
+
+    v_log_content := 'INSERT: Transaction ID=' || :NEW.transaction_id || 
+                     ', Estate ID=' || :NEW.estate_id || 
+                     ', Client ID=' || :NEW.client_id || 
+                     ', Agent ID=' || :NEW.agent_id || 
+                     ', Transaction Date=' || TO_CHAR(:NEW.transaction_date, 'YYYY-MM-DD') || 
+                     ', Sale Price=' || :NEW.sale_price;
+
+    INSERT INTO transaction_logs (
+        log_id, log_content, log_date, modified_by
+    ) VALUES (
+        transaction_logs_seq.NEXTVAL,
+        v_log_content,
+        SYSDATE,
+        v_user
+    );
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_log_transactions_update
+AFTER UPDATE ON transactions
+FOR EACH ROW
+DECLARE
+    v_user VARCHAR2(255);
+    v_log_content CLOB;
+BEGIN
+    v_user := NVL(SYS_CONTEXT('USERENV', 'SESSION_USER'), 'Unknown');
+
+    v_log_content := 'UPDATE: Old Transaction ID= ' || :OLD.transaction_id ||
+                     ', New Transaction ID= ' || :NEW.transaction_id ||
+                     ', Old Estate ID= ' || :OLD.estate_id ||
+                     ', New Estate ID= ' || :NEW.estate_id ||
+                     ', Old Client ID= ' || :OLD.client_id ||
+                     ', New Client ID= ' || :NEW.client_id ||
+                     ', Old Agent ID= ' || :OLD.agent_id ||
+                     ', New Agent ID= ' || :NEW.agent_id ||
+                     ', Old Transaction Date=' || TO_CHAR(:OLD.transaction_date, 'YYYY-MM-DD') ||
+                     ', New Transaction Date=' || TO_CHAR(:NEW.transaction_date, 'YYYY-MM-DD') ||
+                     ', Old Sale Price=' || :OLD.sale_price || 
+                     ', New Sale Price=' || :NEW.sale_price;
+
+    INSERT INTO transaction_logs (
+        log_id, log_content, log_date, modified_by
+    ) VALUES (
+        transaction_logs_seq.NEXTVAL,
+        v_log_content,
+        SYSDATE,
+        v_user
+    );
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_log_transactions_delete
+AFTER DELETE ON transactions
+FOR EACH ROW
+DECLARE
+    v_user VARCHAR2(255);
+    v_log_content CLOB;
+BEGIN
+    v_user := NVL(SYS_CONTEXT('USERENV', 'SESSION_USER'), 'Unknown');
+
+    v_log_content := 'DELETE: Transaction ID=' || :OLD.transaction_id || 
+                     ', Estate ID=' || :OLD.estate_id || 
+                     ', Client ID=' || :OLD.client_id || 
+                     ', Agent ID=' || :OLD.agent_id || 
+                     ', Transaction Date=' || TO_CHAR(:OLD.transaction_date, 'YYYY-MM-DD') || 
+                     ', Sale Price=' || :OLD.sale_price;
+
+    INSERT INTO transaction_logs (
+        log_id, log_content, log_date, modified_by
+    ) VALUES (
+        transaction_logs_seq.NEXTVAL,
+        v_log_content,
+        SYSDATE,
+        v_user
+    );
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_update_estate_status
+AFTER INSERT ON transactions
+FOR EACH ROW
+BEGIN
+    UPDATE estates
+    SET status_id = 1001
+    WHERE estate_id = :NEW.estate_id;
+END;
+/
+
+select * from estate_statuses;
+select * from estates where status_id = 1000;
+
+INSERT INTO transactions (estate_id, client_id, agent_id, transaction_date, sale_price)
+VALUES (1142, 1000, 1000, SYSDATE, 1500000);
+
+select * from estates where estate_id = 1142;
+
+SELECT *
+FROM transactions
+WHERE transaction_id = (SELECT MAX(transaction_id) FROM transactions);
+
+UPDATE transactions
+SET sale_price = 2000000, transaction_date = TO_DATE('11/21/2024', 'MM/DD/YYYY')
+WHERE transaction_id = 1201;
+
+DELETE FROM transactions
+WHERE transaction_id = 1201;
+
+SELECT * FROM transaction_logs;
+
+
+
+********************************************	- Procedury, funkcje z parametrami, możliwe parametry domyślne, wykorzystanie funkcji okienkowych 
+
+
+
+CREATE OR REPLACE FUNCTION get_average_sale_price(p_type_name IN VARCHAR2 DEFAULT 'Apartment') 
+RETURN NUMBER 
+IS
+    avg_price NUMBER;
+BEGIN
+    SELECT AVG(sale_price) INTO avg_price
+    FROM transactions t
+    JOIN estates e ON t.estate_id = e.estate_id
+    JOIN estate_types et ON e.type_id = et.type_id
+    WHERE et.type_name = p_type_name;
+
+    RETURN ROUND(avg_price, 2);
+END;
+/
+
+select * from estate_types;
+
+SELECT get_average_sale_price('House') AS avg_price FROM dual;
+SELECT get_average_sale_price() AS avg_price_default FROM dual;
+
+
+
+
+CREATE OR REPLACE PROCEDURE get_top_n_sales(p_limit IN NUMBER DEFAULT 10)
+IS
+BEGIN
+    FOR rec IN (
+        SELECT e.estate_id, e.estate_name, e.area, t.sale_price, 
+               RANK() OVER (ORDER BY t.sale_price DESC) AS rank
+        FROM transactions t
+        JOIN estates e ON t.estate_id = e.estate_id
+    )
+    LOOP
+        DBMS_OUTPUT.PUT_LINE('Rank: ' || rec.rank || 
+                             ' | Estate ID: ' || rec.estate_id || 
+                             ' | Name: ' || rec.estate_name || 
+                             ' | Sale Price: ' || rec.sale_price);
+        EXIT WHEN rec.rank = p_limit;
+    END LOOP;
+END;
+/
+
+BEGIN
+    get_top_n_sales(5);
+END;
+/
+
+
+
+CREATE OR REPLACE FUNCTION get_median_sale_price(p_type IN VARCHAR2 DEFAULT 'House')
+RETURN NUMBER
+IS
+    median_price NUMBER;
+BEGIN
+    SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sale_price) 
+    INTO median_price
+    FROM transactions t
+    JOIN estates e ON t.estate_id = e.estate_id
+    JOIN estate_types et ON e.type_id = et.type_id
+    WHERE et.type_name = p_type;
+
+    RETURN median_price;
+END;
+/
+
+select * from estate_types;
+
+SELECT get_median_sale_price() as median_default FROM dual;
+SELECT get_median_sale_price('Commercial') as median_comercial FROM dual;
+
+
+
+CREATE OR REPLACE PROCEDURE rank_agents_by_sales_count(p_top IN NUMBER DEFAULT 10)
+IS
+BEGIN
+    FOR rec IN (
+        SELECT a.agent_id, 
+               a.first_name || ' ' || a.last_name AS agent_name, 
+               COUNT(*) AS sales_count,
+               RANK() OVER (ORDER BY COUNT(*) DESC) AS rank
+        FROM agents a
+        JOIN transactions t ON a.agent_id = t.agent_id
+        GROUP BY a.agent_id, a.first_name, a.last_name
+    )
+    LOOP
+        DBMS_OUTPUT.PUT_LINE('Rank: ' || rec.rank || 
+                             ' | Agent: ' || rec.agent_name || 
+                             ' | Sales Count: ' || rec.sales_count);
+        EXIT WHEN rec.rank = p_top;
+    END LOOP;
+END;
+/
+
+BEGIN
+    rank_agents_by_sales_count(3);
+END;
+/
+
+
+	
+2. Procedury, funkcje, wyzwalacze tworzące podsumowania
+	- Zestawienia miesięczne, kwartalne, roczne, w zależności  od różnych parametrów – zapisywane w bazie danych (gotowe do wyświetlania na wykresach)
+
+
+
+CREATE TABLE monthly_summary (
+    summary_id NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    month VARCHAR2(7), -- Format: 'YYYY-MM'
+    total_sales NUMBER,
+    total_transactions NUMBER
+);
+
+CREATE TABLE quarterly_summary (
+    summary_id NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    year NUMBER,
+    quarter NUMBER, -- 1, 2, 3, 4
+    total_sales NUMBER,
+    total_transactions NUMBER
+);
+
+CREATE TABLE yearly_summary (
+    summary_id NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    year NUMBER,
+    total_sales NUMBER,
+    total_transactions NUMBER
+);
+
+CREATE OR REPLACE PROCEDURE generate_monthly_summary IS
+BEGIN
+    INSERT INTO monthly_summary (month, total_sales, total_transactions)
+    SELECT TO_CHAR(transaction_date, 'YYYY-MM') AS month,
+           SUM(sale_price) AS total_sales,
+           COUNT(*) AS total_transactions
+    FROM transactions
+    GROUP BY TO_CHAR(transaction_date, 'YYYY-MM')
+    ORDER BY month;
+
+    COMMIT;
+END;
+/
+
+BEGIN
+    generate_monthly_summary;
+END;
+/
+
+CREATE OR REPLACE PROCEDURE generate_quarterly_summary IS
+BEGIN
+    INSERT INTO quarterly_summary (year, quarter, total_sales, total_transactions)
+    SELECT EXTRACT(YEAR FROM transaction_date) AS year,
+           TO_NUMBER(TO_CHAR(transaction_date, 'Q')) AS quarter,
+           SUM(sale_price) AS total_sales,
+           COUNT(*) AS total_transactions
+    FROM transactions
+    GROUP BY EXTRACT(YEAR FROM transaction_date), TO_NUMBER(TO_CHAR(transaction_date, 'Q'))
+    ORDER BY year, quarter;
+
+    COMMIT;
+END;
+/
+
+BEGIN
+    generate_quarterly_summary;
+END;
+/
+
+CREATE OR REPLACE PROCEDURE generate_yearly_summary IS
+BEGIN
+    INSERT INTO yearly_summary (year, total_sales, total_transactions)
+    SELECT EXTRACT(YEAR FROM transaction_date) AS year,
+           SUM(sale_price) AS total_sales,
+           COUNT(*) AS total_transactions
+    FROM transactions
+    GROUP BY EXTRACT(YEAR FROM transaction_date)
+    ORDER BY year;
+
+    COMMIT;
+END;
+/
+
+BEGIN
+    generate_yearly_summary;
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_update_monthly_summary
+AFTER INSERT ON transactions
+FOR EACH ROW
+DECLARE
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_count
+    FROM monthly_summary
+    WHERE month = TO_CHAR(:NEW.transaction_date, 'YYYY-MM');
+
+    IF v_count > 0 THEN
+        UPDATE monthly_summary
+        SET total_sales = total_sales + :NEW.sale_price,
+            total_transactions = total_transactions + 1
+        WHERE month = TO_CHAR(:NEW.transaction_date, 'YYYY-MM');
+    ELSE
+        INSERT INTO monthly_summary (month, total_sales, total_transactions)
+        VALUES (TO_CHAR(:NEW.transaction_date, 'YYYY-MM'), :NEW.sale_price, 1);
+    END IF;
+END;
+/
+
+select * from estates where status_id = 1000;
+
+INSERT INTO transactions (estate_id, client_id, agent_id, transaction_date, sale_price)
+VALUES (1146, 1000, 1000, SYSDATE, 3600000);
+
+select * from monthly_summary order by month desc;
+
+

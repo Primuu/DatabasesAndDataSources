@@ -76,14 +76,23 @@ CREATE TABLE transactions (
 
 CREATE TABLE transaction_logs (
     log_id NUMBER PRIMARY KEY,
-    transaction_id NUMBER,
     log_content CLOB,
     log_date DATE,
     modified_by VARCHAR2(255),
-    FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id)
 );
 
+CREATE TABLE archive_transactions (
+    transaction_id NUMBER PRIMARY KEY,
+    estate_id NUMBER,
+    client_id NUMBER,
+    agent_id NUMBER,
+    transaction_date DATE,
+    sale_price NUMBER,
+    archived_date DATE DEFAULT SYSDATE,
+    archived_by VARCHAR2(255)
+);
 
+--DROP TABLE archive_transactions CASCADE CONSTRAINTS;
 --DROP TABLE transaction_logs CASCADE CONSTRAINTS;
 --DROP TABLE transactions CASCADE CONSTRAINTS;
 --DROP TABLE estates CASCADE CONSTRAINTS;
@@ -94,6 +103,7 @@ CREATE TABLE transaction_logs (
 --DROP TABLE agents CASCADE CONSTRAINTS;
 --DROP TABLE clients CASCADE CONSTRAINTS;
 
+--DELETE FROM archive_transactions;
 --DELETE FROM transaction_logs;
 --DELETE FROM transactions;
 --DELETE FROM estates;

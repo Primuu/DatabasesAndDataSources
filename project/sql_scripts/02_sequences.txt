@@ -1,0 +1,101 @@
+CREATE SEQUENCE addresses_seq START WITH 1000 INCREMENT BY 1;
+CREATE SEQUENCE agents_seq START WITH 1000 INCREMENT BY 1;
+CREATE SEQUENCE clients_seq START WITH 1000 INCREMENT BY 1;
+CREATE SEQUENCE estate_statuses_seq START WITH 1000 INCREMENT BY 1;
+CREATE SEQUENCE estate_types_seq START WITH 1000 INCREMENT BY 1;
+CREATE SEQUENCE estate_features_seq START WITH 1000 INCREMENT BY 1;
+CREATE SEQUENCE estates_seq START WITH 1000 INCREMENT BY 1;
+CREATE SEQUENCE transactions_seq START WITH 1000 INCREMENT BY 1;
+CREATE SEQUENCE transaction_logs_seq START WITH 1000 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER trg_addresses_id
+BEFORE INSERT ON addresses
+FOR EACH ROW
+BEGIN
+    :NEW.address_id := addresses_seq.NEXTVAL;
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_agents_id
+BEFORE INSERT ON agents
+FOR EACH ROW
+BEGIN
+    :NEW.agent_id := agents_seq.NEXTVAL;
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_clients_id
+BEFORE INSERT ON clients
+FOR EACH ROW
+BEGIN
+    :NEW.client_id := clients_seq.NEXTVAL;
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_estate_statuses_id
+BEFORE INSERT ON estate_statuses
+FOR EACH ROW
+BEGIN
+    :NEW.status_id := estate_statuses_seq.NEXTVAL;
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_estate_types_id
+BEFORE INSERT ON estate_types
+FOR EACH ROW
+BEGIN
+    :NEW.type_id := estate_types_seq.NEXTVAL;
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_estate_features_id
+BEFORE INSERT ON estate_features
+FOR EACH ROW
+BEGIN
+    :NEW.feature_id := estate_features_seq.NEXTVAL;
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_estates_id
+BEFORE INSERT ON estates
+FOR EACH ROW
+BEGIN
+    :NEW.estate_id := estates_seq.NEXTVAL;
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_transactions_id
+BEFORE INSERT ON transactions
+FOR EACH ROW
+BEGIN
+    :NEW.transaction_id := transactions_seq.NEXTVAL;
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_transaction_logs_id
+BEFORE INSERT ON transaction_logs
+FOR EACH ROW
+BEGIN
+    :NEW.log_id := transaction_logs_seq.NEXTVAL;
+END;
+/
+
+--DROP TRIGGER trg_addresses_id;
+--DROP TRIGGER trg_agents_id;
+--DROP TRIGGER trg_clients_id;
+--DROP TRIGGER trg_estate_statuses_id;
+--DROP TRIGGER trg_estate_types_id;
+--DROP TRIGGER trg_estate_features_id;
+--DROP TRIGGER trg_estates_id;
+--DROP TRIGGER trg_transactions_id;
+--DROP TRIGGER trg_transaction_logs_id;
+
+--DROP SEQUENCE addresses_seq;
+--DROP SEQUENCE agents_seq;
+--DROP SEQUENCE clients_seq;
+--DROP SEQUENCE estate_statuses_seq;
+--DROP SEQUENCE estate_types_seq;
+--DROP SEQUENCE estate_features_seq;
+--DROP SEQUENCE estates_seq;
+--DROP SEQUENCE transactions_seq;
+--DROP SEQUENCE transaction_logs_seq;

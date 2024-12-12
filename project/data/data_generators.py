@@ -48,7 +48,7 @@ def generate_clients(count):
             "last_name": fake.last_name(),
             "phone_number": fake.numerify(text="+##-###-###-###"),
             "email": fake.email(),
-            "budget": random.randint(100000, 3600000)
+            "budget": random.randint(400_000, 3_600_000)
         }
         clients.append(client)
     return clients
@@ -87,10 +87,13 @@ def generate_addresses(count):
     return addresses
 
 
-def generate_estates(count, agents, statuses, types, features, addresses):
+def generate_estates(count, agents, statuses, types):
     estates = []
     ids = generate_ids(1000, count)
     for estate_id in ids:
+        area = random.randint(35, 400)
+        price_per_meter = random.randint(3_500, 30_000)
+
         estate = {
             "estate_id": estate_id,
             "feature_id": estate_id,
@@ -99,8 +102,8 @@ def generate_estates(count, agents, statuses, types, features, addresses):
             "status_id": random.choice(statuses)["status_id"],
             "type_id": random.choice(types)["type_id"],
             "estate_name": fake.street_name(),
-            "area": random.randint(35, 400),
-            "price": random.randint(100000, 3000000)
+            "area": area,
+            "price": area * price_per_meter
         }
         estates.append(estate)
     return estates
@@ -146,7 +149,7 @@ def main():
     clients = generate_clients(300)
     features = generate_features(996)
     addresses = generate_addresses(996)
-    estates = generate_estates(996, agents, STATUSES, TYPES, features, addresses)
+    estates = generate_estates(996, agents, STATUSES, TYPES)
     transactions = generate_transactions(200, estates, clients, agents)
 
     data = {

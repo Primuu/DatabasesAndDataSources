@@ -112,28 +112,80 @@ def main():
                 print("Loading data...")
 
                 insert_data(cursor, "agents", data["agents"],
-                            ["agent_id", "first_name", "last_name", "phone_number", "email", "commission_rate"])
+                            [
+                                # "agent_id",
+                                "first_name",
+                                "last_name",
+                                "phone_number",
+                                "email",
+                                "commission_rate"
+                            ])
 
                 insert_data(cursor, "clients", data["clients"],
-                            ["client_id", "first_name", "last_name", "phone_number", "email", "budget"])
+                            [
+                                # "client_id",
+                                "first_name",
+                                "last_name",
+                                "phone_number",
+                                "email",
+                                "budget"
+                            ])
 
-                insert_data(cursor, "estate_statuses", data["estate_statuses"], ["status_id", "status_name"])
+                insert_data(cursor, "estate_statuses", data["estate_statuses"],
+                            [
+                                # "status_id",
+                                "status_name"
+                            ])
 
-                insert_data(cursor, "estate_types", data["estate_types"], ["type_id", "type_name"])
+                insert_data(cursor, "estate_types", data["estate_types"],
+                            [
+                                # "type_id",
+                                "type_name"
+                            ])
 
                 insert_data(cursor, "estate_features", data["estate_features"],
-                            ["feature_id", "estate_description", "num_of_rooms", "num_of_bedrooms",
-                             "num_of_bathrooms", "floor_number", "num_of_parking_spaces"])
+                            [
+                                # "feature_id",
+                                "estate_description",
+                                "num_of_rooms",
+                                "num_of_bedrooms",
+                                "num_of_bathrooms",
+                                "floor_number",
+                                "num_of_parking_spaces"
+                            ])
 
                 insert_data(cursor, "addresses", data["addresses"],
-                            ["address_id", "locality", "street", "zip_code", "property_number", "apartment_number"])
+                            [
+                                # "address_id",
+                                "locality",
+                                "street",
+                                "zip_code",
+                                "property_number",
+                                "apartment_number"
+                            ])
 
                 insert_data(cursor, "estates", data["estates"],
-                            ["estate_id", "feature_id", "address_id", "agent_id", "status_id", "type_id",
-                             "estate_name", "area", "price"])
+                            [
+                                # "estate_id",
+                                "feature_id",
+                                "address_id",
+                                "agent_id",
+                                "status_id",
+                                "type_id",
+                                "estate_name",
+                                "area",
+                                "price"
+                            ])
 
                 insert_data(cursor, "transactions", data["transactions"],
-                            ["transaction_id", "estate_id", "client_id", "agent_id", "transaction_date", "sale_price"])
+                            [
+                                # "transaction_id",
+                                "estate_id",
+                                "client_id",
+                                "agent_id",
+                                "transaction_date",
+                                "sale_price"
+                            ])
 
                 connection.commit()
                 print("Data loaded successfully.")

@@ -652,6 +652,26 @@ BEGIN
         SYSDATE,
         v_user
     );
+    
+    INSERT INTO archive_transactions (
+        transaction_id, 
+        estate_id, 
+        client_id, 
+        agent_id, 
+        transaction_date, 
+        sale_price, 
+        archived_date, 
+        archived_by
+    ) VALUES (
+        :OLD.transaction_id,
+        :OLD.estate_id,
+        :OLD.client_id,
+        :OLD.agent_id,
+        :OLD.transaction_date,
+        :OLD.sale_price,
+        SYSDATE,
+        v_user
+    );
 END;
 /
 
